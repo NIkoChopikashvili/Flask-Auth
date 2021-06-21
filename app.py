@@ -6,6 +6,8 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from os import path
 from sqlalchemy import exc
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -17,9 +19,18 @@ class Data(db.Model):
     passwrd = db.Column(db.String(200))
     email_email = db.Column(db.String(200), unique=True)
 
-@app.route('/logged')
+@app.route('/logged', methods=["POST", "GET"])
 def logged():
-    return render_template('logged.html')
+    if request.method == "POST":
+        crypto_name = request.form['some']
+        html = requests.get(f"https://coinmarketcap.com/currencies/{crypto_name}/")
+        bs = BeautifulSoup(html.text, "lxml")
+        crypto_price = bs.find("div", class_= "priceValue___11gHJ")
+        print(crypto_price.text)
+    try:
+        return render_template("logged.html", crypto_price = crypto_price.text) 
+    except UnboundLocalError:
+        return render_template('logged.html')
 
 @app.route('/home')
 def home():
